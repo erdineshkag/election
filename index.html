@@ -589,11 +589,12 @@ function renderGrid(catIndex) {
 
 function buildCard(c, catIndex) {
   const initials = c.Name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-  const photoHTML = c.Image_URL
-    ? `<img class="card-photo" src="${esc(c.Image_URL)}" alt="${esc(c.Name)}" loading="lazy"
+  const imgUrl = formatImageUrl(c.Image_URL);
+  const photoHTML = imgUrl
+    ? `<img class="card-photo" src="${esc(imgUrl)}" alt="${esc(c.Name)}" loading="lazy"
          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
     : '';
-  const phStyle = c.Image_URL ? 'display:none' : '';
+  const phStyle = imgUrl ? 'display:none' : '';
   return `
     <div class="candidate-card" data-id="${esc(c.Candidate_ID)}" data-cat="${catIndex}">
       <div class="card-check">
@@ -747,14 +748,15 @@ function buildReview() {
       ? (state.candidates[cat.key] || []).find(c => c.Candidate_ID === selId)
       : null;
     const initials = cand ? cand.Name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase() : '?';
-    const photoHTML = cand && cand.Image_URL
-      ? `<img src="${esc(cand.Image_URL)}" alt="${esc(cand.Name)}" loading="lazy"
+    const imgUrl = cand ? formatImageUrl(cand.Image_URL) : '';
+    const photoHTML = imgUrl
+      ? `<img src="${esc(imgUrl)}" alt="${esc(cand.Name)}" loading="lazy"
            onerror="this.style.display='none'"
            style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
       : '';
 
     html += `<div class="review-card">
-      <div class="review-avatar">${photoHTML}${!cand || !cand.Image_URL ? initials : ''}</div>
+      <div class="review-avatar">${photoHTML}${!imgUrl ? initials : ''}</div>
       <div>
         <div class="review-cat">${esc(cat.label)}</div>
         <div class="review-name">${cand ? esc(cand.Name) : '—'}</div>
@@ -891,6 +893,15 @@ function esc(s) {
   return String(s||'')
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function formatImageUrl(url) {
+  if (!url) return '';
+  const driveMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
+  if (driveMatch && driveMatch[1]) {
+    return 'https://drive.google.com/uc?export=view&id=' + driveMatch[1];
+  }
+  return url;
 }
 
 let toastTimer;

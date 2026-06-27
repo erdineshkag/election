@@ -699,8 +699,9 @@ function renderCandidateTable(candidates) {
   }
   tbody.innerHTML = candidates.map(c => {
     const initials = c.Name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
-    const photo = c.Image_URL
-      ? `<img class="avatar-sm" src="${escapeAttr(c.Image_URL)}" onerror="this.outerHTML='<span class=\\'avatar-placeholder-sm\\'>${initials}</span>'">`
+    const imgUrl = formatImageUrl(c.Image_URL);
+    const photo = imgUrl
+      ? `<img class="avatar-sm" src="${escapeAttr(imgUrl)}" onerror="this.outerHTML='<span class=\\'avatar-placeholder-sm\\'>${initials}</span>'">`
       : `<span class="avatar-placeholder-sm">${initials}</span>`;
     const isActive = c.Status === 'Active';
     return `<tr>
@@ -837,6 +838,14 @@ function showToast(msg, type = '') {
   t.textContent = msg; t.className = 'toast show ' + type;
   clearTimeout(t._timer);
   t._timer = setTimeout(() => t.className = 'toast', 3000);
+}
+function formatImageUrl(url) {
+  if (!url) return '';
+  const driveMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
+  if (driveMatch && driveMatch[1]) {
+    return 'https://drive.google.com/uc?export=view&id=' + driveMatch[1];
+  }
+  return url;
 }
 function escapeHTML(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function escapeAttr(s) { return escapeHTML(s); }
