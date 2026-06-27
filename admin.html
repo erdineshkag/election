@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Allergiance Academy Elections</title>
+<style>
+  :root {
+    --primary: #659287;
+    --secondary: #88BDA4;
+    --accent: #B1D3B9;
+    --bg: #E6F2DD;
+    --text: #1a2e26;
+    --text-muted: #4a6b5e;
+    --card-bg: #ffffff;
+    --danger: #c62828;
+    --danger-bg: #ffebee;
+    --warning: #e65100;
+    --success: #2e7d32;
+    --radius: 14px;
+    --radius-sm: 8px;
+    --shadow: 0 2px 12px rgba(101,146,135,0.13);
+    --transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* LOGIN SCREEN */
+  #login-screen {
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg);
+    padding: 20px;
+  }
+  .login-card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 36px 28px;
+    width: 100%; max-width: 360px;
+    box-shadow: var(--shadow);
+    text-align: center;
+  }
+  .login-logo { font-size: 3rem; margin-bottom: 12px; }
+  .login-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 4px; }
+  .login-sub { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 24px; }
+  .login-label { display: block; text-align: left; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 5px; }
+  .login-input {
+    width: 100%; padding: 13px 14px;
+    border: 2px solid var(--accent);
+    border-radius: var(--radius-sm);
+    font-size: 1rem;
+    color: var(--text);
+    background: #fff;
+    outline: none;
+    transition: var(--transition);
+    margin-bottom: 16px;
+  }
+  .login-input:focus { border-color: var(--primary); }
+  .login-btn {
+    width: 100%; padding: 14px;
+    background: var(--primary); color: #fff;
+    border: none; border-radius: var(--radius-sm);
+    font-size: 1rem; font-weight: 700; cursor: pointer;
+    transition: var(--transition);
+  }
+  .login-btn:hover { background: #527a6e; }
+  .login-error { font-size: 0.8rem; color: var(--danger); margin-top: 10px; display: none; }
+
+  /* ADMIN SHELL */
+  #admin-shell { display: none; }
+
+  /* TOP NAV */
+  .admin-nav {
+    background: var(--primary);
+    padding: 0 24px;
+    display: flex; align-items: center; gap: 0;
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .admin-nav::-webkit-scrollbar { display: none; }
+  .nav-brand {
+    color: #fff; font-weight: 700; font-size: 0.95rem;
+    padding: 18px 0; margin-right: 24px; white-space: nowrap; flex-shrink: 0;
+  }
+  .nav-tab {
+    color: rgba(255,255,255,0.7); font-size: 0.82rem; font-weight: 600;
+    padding: 18px 14px; cursor: pointer; white-space: nowrap;
+    border-bottom: 3px solid transparent; transition: var(--transition);
+    flex-shrink: 0;
+  }
+  .nav-tab:hover { color: #fff; }
+  .nav-tab.active { color: #fff; border-bottom-color: #fff; }
+  .nav-logout {
+    margin-left: auto; flex-shrink: 0;
+    color: rgba(255,255,255,0.7); font-size: 0.78rem; cursor: pointer; padding: 18px 0;
+  }
+  .nav-logout:hover { color: #fff; }
+
+  /* CONTENT AREA */
+  .admin-content { padding: 24px; max-width: 900px; }
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+
+  /* CARDS */
+  .card {
+    background: var(--card-bg); border-radius: var(--radius);
+    padding: 20px; box-shadow: var(--shadow); margin-bottom: 20px;
+  }
+  .card-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .card-title .icon { font-size: 1.1rem; }
+
+  /* ELECTION CONTROLS */
+  .election-controls { display: flex; gap: 10px; flex-wrap: wrap; }
+  .ctrl-btn {
+    padding: 11px 20px; border: none; border-radius: var(--radius-sm);
+    font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: var(--transition);
+    letter-spacing: 0.02em;
+  }
+  .ctrl-btn.start { background: var(--primary); color: #fff; }
+  .ctrl-btn.stop { background: var(--warning); color: #fff; }
+  .ctrl-btn.reset { background: var(--danger-bg); color: var(--danger); border: 1.5px solid #ffcdd2; }
+  .ctrl-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+  .ctrl-btn:active { transform: translateY(0); }
+  .election-status-row {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+  }
+  .status-pill {
+    padding: 5px 14px; border-radius: 20px;
+    font-size: 0.78rem; font-weight: 700; letter-spacing: 0.04em;
+  }
+  .status-pill.active-pill { background: #e8f5e9; color: var(--success); border: 1.5px solid #a5d6a7; }
+  .status-pill.stopped-pill { background: var(--danger-bg); color: var(--danger); border: 1.5px solid #ffcdd2; }
+  #admin-election-status-text { font-size: 0.82rem; color: var(--text-muted); }
+
+  /* VOTE STATS */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .stat-box {
+    background: var(--bg); border-radius: var(--radius-sm);
+    padding: 14px; text-align: center;
+  }
+  .stat-number { font-size: 2rem; font-weight: 700; color: var(--primary); line-height: 1; }
+  .stat-label { font-size: 0.72rem; color: var(--text-muted); margin-top: 3px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* RESULTS TABLE */
+  .results-category { margin-bottom: 20px; }
+  .results-cat-label { font-size: 0.78rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .result-row {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 6px;
+  }
+  .result-name { flex: 1; font-size: 0.85rem; font-weight: 600; }
+  .result-count { font-size: 0.85rem; font-weight: 700; color: var(--primary); width: 40px; text-align: right; }
+  .result-bar-wrap { flex: 2; height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; }
+  .result-bar { height: 100%; background: var(--primary); border-radius: 4px; transition: width 0.5s ease; }
+  .winner-tag { font-size: 0.65rem; background: #fff9c4; color: #f57f17; border: 1px solid #ffe082; border-radius: 6px; padding: 1px 6px; font-weight: 700; }
+
+  /* CANDIDATE TABLE */
+  .cand-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+  .cand-table th {
+    text-align: left; padding: 9px 10px;
+    font-size: 0.7rem; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.05em;
+    border-bottom: 2px solid var(--bg);
+  }
+  .cand-table td { padding: 10px; border-bottom: 1px solid var(--bg); vertical-align: middle; }
+  .cand-table tr:last-child td { border-bottom: none; }
+  .cand-table tr:hover td { background: #f9fdfa; }
+  .avatar-sm {
+    width: 32px; height: 32px; border-radius: 50%;
+    object-fit: cover; border: 2px solid var(--accent);
+    vertical-align: middle;
+  }
+  .avatar-placeholder-sm {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--accent); display: inline-flex;
+    align-items: center; justify-content: center;
+    font-size: 0.75rem; font-weight: 700; color: var(--primary);
+    vertical-align: middle;
+  }
+  .status-tag {
+    font-size: 0.65rem; font-weight: 700; padding: 2px 8px;
+    border-radius: 6px; letter-spacing: 0.04em;
+  }
+  .status-tag.active { background: #e8f5e9; color: var(--success); }
+  .status-tag.inactive { background: var(--danger-bg); color: var(--danger); }
+  .action-btn {
+    padding: 5px 10px; border: none; border-radius: 6px;
+    font-size: 0.72rem; font-weight: 600; cursor: pointer; transition: var(--transition);
+    margin-right: 4px;
+  }
+  .action-btn.edit { background: #e3f2fd; color: #1565c0; }
+  .action-btn.delete { background: var(--danger-bg); color: var(--danger); }
+  .action-btn.toggle-active { background: #e8f5e9; color: var(--success); }
+  .action-btn.toggle-inactive { background: #fff3e0; color: var(--warning); }
+
+  /* ADD CANDIDATE FORM */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media(max-width:540px) { .form-grid { grid-template-columns: 1fr; } }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.full { grid-column: 1 / -1; }
+  .form-label { font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .form-input, .form-select {
+    padding: 10px 12px; border: 2px solid var(--accent);
+    border-radius: var(--radius-sm); font-size: 0.88rem;
+    color: var(--text); background: #fff; outline: none;
+    transition: var(--transition);
+  }
+  .form-input:focus, .form-select:focus { border-color: var(--primary); }
+  .form-submit {
+    padding: 12px 28px; background: var(--primary); color: #fff;
+    border: none; border-radius: var(--radius-sm);
+    font-size: 0.88rem; font-weight: 700; cursor: pointer;
+    transition: var(--transition); margin-top: 8px;
+  }
+  .form-submit:hover { background: #527a6e; }
+  .form-cancel {
+    padding: 12px 18px; background: var(--bg); color: var(--text-muted);
+    border: none; border-radius: var(--radius-sm);
+    font-size: 0.88rem; font-weight: 600; cursor: pointer;
+    transition: var(--transition); margin-top: 8px; margin-left: 8px;
+    display: none;
+  }
+  .form-actions { display: flex; align-items: center; margin-top: 4px; }
+  #form-title-text { font-size: 0.95rem; font-weight: 700; }
+
+  /* CLASS VOTES TABLE */
+  .class-votes-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+  .class-votes-table th { text-align: left; padding: 8px 10px; font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid var(--bg); }
+  .class-votes-table td { padding: 8px 10px; border-bottom: 1px solid var(--bg); }
+
+  /* TOAST */
+  .toast {
+    position: fixed; top: 70px; right: 20px;
+    background: var(--text); color: #fff; padding: 11px 18px;
+    border-radius: 10px; font-size: 0.82rem; font-weight: 600;
+    z-index: 500; opacity: 0; transition: all 0.3s; pointer-events: none;
+    max-width: 300px;
+  }
+  .toast.show { opacity: 1; }
+  .toast.success { background: var(--success); }
+  .toast.error { background: var(--danger); }
+  .toast.warning { background: var(--warning); }
+
+  /* CONFIRM MODAL */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.4); backdrop-filter: blur(3px);
+    z-index: 400; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal-box {
+    background: #fff; border-radius: var(--radius); padding: 28px 24px;
+    max-width: 340px; width: 100%; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  }
+  .modal-icon { font-size: 2.5rem; margin-bottom: 10px; }
+  .modal-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 6px; }
+  .modal-body { font-size: 0.83rem; color: var(--text-muted); margin-bottom: 20px; }
+  .modal-btns { display: flex; gap: 10px; }
+  .modal-btn { flex: 1; padding: 11px; border: none; border-radius: var(--radius-sm); font-size: 0.88rem; font-weight: 700; cursor: pointer; }
+  .modal-btn.confirm { background: var(--danger); color: #fff; }
+  .modal-btn.cancel { background: var(--bg); color: var(--text-muted); }
+
+  /* REFRESH BTN */
+  .refresh-btn {
+    padding: 7px 14px; background: var(--bg); border: 1.5px solid var(--accent);
+    border-radius: var(--radius-sm); font-size: 0.78rem; font-weight: 600;
+    color: var(--primary); cursor: pointer; transition: var(--transition); margin-left: auto;
+  }
+  .refresh-btn:hover { background: var(--accent); }
+
+  .last-refresh { font-size: 0.7rem; color: var(--text-muted); margin-left: 10px; }
+  .no-data { font-size: 0.83rem; color: var(--text-muted); text-align: center; padding: 20px; }
+  .loading-text { font-size: 0.8rem; color: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">🏛️</div>
+    <div class="login-title">Admin Panel</div>
+    <div class="login-sub">Allergiance Academy Elections</div>
+    <label class="login-label" for="admin-pass">Password</label>
+    <input type="password" id="admin-pass" class="login-input" placeholder="Enter admin password" autocomplete="current-password">
+    <button class="login-btn" onclick="doLogin()">Sign In</button>
+    <div class="login-error" id="login-error">Incorrect password. Try again.</div>
+  </div>
+</div>
+
+<!-- ADMIN SHELL -->
+<div id="admin-shell">
+  <nav class="admin-nav">
+    <div class="nav-brand">⚡ Elections Admin</div>
+    <div class="nav-tab active" onclick="switchTab(event, 'dashboard')">Dashboard</div>
+    <div class="nav-tab" onclick="switchTab(event, 'candidates')">Candidates</div>
+    <div class="nav-tab" onclick="switchTab(event, 'results')">Live Results</div>
+    <div class="nav-tab" onclick="switchTab(event, 'classvotes')">Class Votes</div>
+    <div class="nav-logout" onclick="doLogout()">Sign Out</div>
+  </nav>
+
+  <div class="admin-content">
+
+    <!-- DASHBOARD TAB -->
+    <div class="tab-pane active" id="tab-dashboard">
+      <!-- Election Control -->
+      <div class="card">
+        <div class="card-title"><span class="icon">⚡</span> Election Control</div>
+        <div class="election-status-row">
+          <span class="status-pill" id="dash-status-pill">—</span>
+          <span id="admin-election-status-text">Loading…</span>
+        </div>
+        <div class="election-controls">
+          <button class="ctrl-btn start" onclick="electionAction('start')">▶ Start Election</button>
+          <button class="ctrl-btn stop" onclick="electionAction('stop')">⏹ Stop Election</button>
+          <button class="ctrl-btn reset" onclick="confirmReset()">🗑 Reset All Votes</button>
+        </div>
+      </div>
+
+      <!-- Live Stats -->
+      <div class="card">
+        <div class="card-title">
+          <span class="icon">📊</span> Live Vote Count
+          <button class="refresh-btn" onclick="loadResults()">↻ Refresh</button>
+          <span class="last-refresh" id="last-refresh-text"></span>
+        </div>
+        <div class="stats-grid" id="dash-stats">
+          <div class="stat-box"><div class="stat-number" id="stat-total">—</div><div class="stat-label">Total Votes</div></div>
+          <div class="stat-box"><div class="stat-number" id="stat-hb">—</div><div class="stat-label">Head Boy Votes</div></div>
+          <div class="stat-box"><div class="stat-number" id="stat-hg">—</div><div class="stat-label">Head Girl Votes</div></div>
+          <div class="stat-box"><div class="stat-number" id="stat-vhb">—</div><div class="stat-label">V. Head Boy</div></div>
+          <div class="stat-box"><div class="stat-number" id="stat-vhg">—</div><div class="stat-label">V. Head Girl</div></div>
+        </div>
+      </div>
+
+      <!-- Winners -->
+      <div class="card" id="winners-card">
+        <div class="card-title"><span class="icon">🏆</span> Current Leaders</div>
+        <div id="winners-list"><div class="no-data">No data yet</div></div>
+      </div>
+    </div>
+
+    <!-- CANDIDATES TAB -->
+    <div class="tab-pane" id="tab-candidates">
+      <!-- Add/Edit Form -->
+      <div class="card">
+        <div class="card-title"><span class="icon">✏️</span> <span id="form-title-text">Add Candidate</span></div>
+        <input type="hidden" id="edit-id">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Name *</label>
+            <input type="text" class="form-input" id="f-name" placeholder="Full name">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Category *</label>
+            <select class="form-select" id="f-category">
+              <option value="">Select category</option>
+              <option>Head Boy</option>
+              <option>Head Girl</option>
+              <option>Vice Head Boy</option>
+              <option>Vice Head Girl</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Class *</label>
+            <input type="text" class="form-input" id="f-class" placeholder="e.g. 12">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Stream</label>
+            <input type="text" class="form-input" id="f-stream" placeholder="e.g. Science">
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Image URL</label>
+            <input type="url" class="form-input" id="f-image" placeholder="https://…">
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Tagline</label>
+            <input type="text" class="form-input" id="f-tagline" placeholder="Inspiring one-liner">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="form-submit" onclick="saveCandidate()">Save Candidate</button>
+          <button class="form-cancel" id="cancel-edit-btn" onclick="cancelEdit()">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Candidates List -->
+      <div class="card">
+        <div class="card-title"><span class="icon">👥</span> All Candidates <button class="refresh-btn" onclick="loadCandidates()">↻ Refresh</button></div>
+        <div style="overflow-x:auto">
+          <table class="cand-table" id="cand-table">
+            <thead>
+              <tr>
+                <th>Photo</th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Class</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="cand-tbody">
+              <tr><td colspan="6" class="no-data">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULTS TAB -->
+    <div class="tab-pane" id="tab-results">
+      <div class="card">
+        <div class="card-title">
+          <span class="icon">📈</span> Category-wise Live Results
+          <button class="refresh-btn" onclick="loadResults()">↻ Refresh</button>
+          <span class="last-refresh" id="last-refresh-results"></span>
+        </div>
+        <div id="results-breakdown"><div class="no-data">Loading…</div></div>
+      </div>
+    </div>
+
+    <!-- CLASS VOTES TAB -->
+    <div class="tab-pane" id="tab-classvotes">
+      <div class="card">
+        <div class="card-title">
+          <span class="icon">🏫</span> Votes by Class
+          <button class="refresh-btn" onclick="loadResults()">↻ Refresh</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="class-votes-table">
+            <thead><tr>
+              <th>Class</th><th>Votes</th>
+            </tr></thead>
+            <tbody id="class-votes-tbody"><tr><td colspan="2" class="no-data">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end admin-content -->
+</div><!-- end admin-shell -->
+
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal-box">
+    <div class="modal-icon">⚠️</div>
+    <div class="modal-title" id="modal-title">Are you sure?</div>
+    <div class="modal-body" id="modal-body">This action cannot be undone.</div>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-btn confirm" id="modal-confirm-btn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="a-toast"></div>
+
+<script>
+// ============================================================
+//  CONFIG
+// ============================================================
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxzLAHgVACI4SXpuAl8CgY1F8jt4F8EkFWdgArWLWHWsYmwbYiWY6K83r2aV0nd6ExN/exec';
+let adminToken = '';
+
+// ============================================================
+//  LOGIN
+// ============================================================
+document.getElementById('admin-pass').addEventListener('keyup', e => { if (e.key === 'Enter') doLogin(); });
+
+async function doLogin() {
+  const pass = document.getElementById('admin-pass').value;
+  if (!pass) return;
+  const btn = document.querySelector('.login-btn');
+  btn.textContent = 'Verifying...';
+  btn.disabled = true;
+
+  try {
+    const url = new URL(SCRIPT_URL);
+    url.searchParams.set('payload', JSON.stringify({ action: 'verifyLogin', adminPassword: pass }));
+    const res = await fetch(url.toString(), {
+      method: 'GET',
+      redirect: 'follow'
+    });
+    const text = await res.text();
+    const data = JSON.parse(text);
+    
+    if (data && data.success) {
+      adminToken = pass;
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('admin-shell').style.display = 'block';
+      initAdmin();
+    } else {
+      throw new Error('Invalid Password');
+    }
+  } catch(e) {
+    document.getElementById('login-error').style.display = 'block';
+    document.getElementById('admin-pass').value = '';
+    document.getElementById('admin-pass').focus();
+  }
+  
+  btn.textContent = 'Sign In';
+  btn.disabled = false;
+}
+
+function doLogout() {
+  adminToken = '';
+  document.getElementById('admin-shell').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('admin-pass').value = '';
+  document.getElementById('login-error').style.display = 'none';
+  clearInterval(autoRefreshInterval);
+}
+
+// ============================================================
+//  INIT
+// ============================================================
+let autoRefreshInterval = null;
+
+function initAdmin() {
+  loadCandidates();
+  loadResults();
+  autoRefreshInterval = setInterval(loadResults, 5000);
+}
+
+// ============================================================
+//  TAB SWITCHING
+// ============================================================
+function switchTab(event, tab) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (event && event.currentTarget) {
+    event.currentTarget.classList.add('active');
+  }
+}
+
+// ============================================================
+//  ELECTION ACTIONS
+// ============================================================
+async function electionAction(action) {
+  try {
+    const res = await apiFetch(action + 'Election', {});
+    if (res && res.success) {
+      showToast(res.message || 'Done', 'success');
+      loadResults();
+    } else {
+      showToast(res && res.error ? res.error : 'Action failed', 'error');
+    }
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+function confirmReset() {
+  showModal(
+    '🗑 Reset All Votes',
+    'This will permanently delete ALL votes. This cannot be undone. Are you absolutely sure?',
+    async () => {
+      try {
+        const res = await apiFetch('resetElection', {});
+        if (res && res.success) { showToast('All votes deleted. Election stopped.', 'success'); loadResults(); }
+        else showToast(res && res.error ? res.error : 'Reset failed', 'error');
+      } catch(e) { showToast('Reset error', 'error'); }
+    }
+  );
+}
+
+// ============================================================
+//  RESULTS
+// ============================================================
+async function loadResults() {
+  try {
+    const res = await apiFetch('getResults', {});
+    if (!res) return;
+
+    // Update election status
+    updateElectionStatusUI(res.electionActive);
+
+    // Update stats
+    document.getElementById('stat-total').textContent = res.totalVotes ?? '—';
+    if (res.categoryTotals) {
+      document.getElementById('stat-hb').textContent = res.categoryTotals['Head Boy'] ?? 0;
+      document.getElementById('stat-hg').textContent = res.categoryTotals['Head Girl'] ?? 0;
+      document.getElementById('stat-vhb').textContent = res.categoryTotals['Vice Head Boy'] ?? 0;
+      document.getElementById('stat-vhg').textContent = res.categoryTotals['Vice Head Girl'] ?? 0;
+    }
+
+    // Results breakdown
+    renderResults(res.results, res.winners);
+
+    // Winners
+    renderWinners(res.winners);
+
+    // Class votes
+    renderClassVotes(res.classCounts);
+
+    const now = new Date().toLocaleTimeString();
+    document.querySelectorAll('.last-refresh').forEach(el => el.textContent = 'Updated ' + now);
+  } catch(e) { /* silent */ }
+}
+
+function updateElectionStatusUI(active) {
+  const pill = document.getElementById('dash-status-pill');
+  const text = document.getElementById('admin-election-status-text');
+  if (active) {
+    pill.className = 'status-pill active-pill';
+    pill.textContent = '● Active';
+    text.textContent = 'Election is currently running';
+  } else {
+    pill.className = 'status-pill stopped-pill';
+    pill.textContent = '● Stopped';
+    text.textContent = 'Election is not accepting votes';
+  }
+}
+
+function renderResults(results, winners) {
+  const container = document.getElementById('results-breakdown');
+  if (!results || !Object.keys(results).length) {
+    container.innerHTML = '<div class="no-data">No votes recorded yet.</div>';
+    return;
+  }
+  const cats = ['Head Boy', 'Head Girl', 'Vice Head Boy', 'Vice Head Girl'];
+  let html = '';
+  cats.forEach(cat => {
+    const catData = results[cat];
+    if (!catData || !Object.keys(catData).length) return;
+    const maxVotes = Math.max(...Object.values(catData).map(d => d.votes), 1);
+    const winner = winners && winners[cat] ? winners[cat].name : null;
+    html += `<div class="results-category">
+      <div class="results-cat-label">${escapeHTML(cat)}</div>`;
+    Object.entries(catData)
+      .sort((a, b) => b[1].votes - a[1].votes)
+      .forEach(([id, d]) => {
+        const pct = Math.round((d.votes / maxVotes) * 100);
+        const isWinner = winner === d.name;
+        html += `<div class="result-row">
+          <div class="result-name">${escapeHTML(d.name)}${isWinner ? ' <span class="winner-tag">👑 Leading</span>' : ''}</div>
+          <div class="result-count">${d.votes}</div>
+          <div class="result-bar-wrap"><div class="result-bar" style="width:${pct}%"></div></div>
+        </div>`;
+      });
+    html += '</div>';
+  });
+  container.innerHTML = html || '<div class="no-data">No votes yet.</div>';
+}
+
+function renderWinners(winners) {
+  const container = document.getElementById('winners-list');
+  if (!winners || !Object.keys(winners).length) {
+    container.innerHTML = '<div class="no-data">No votes recorded yet.</div>';
+    return;
+  }
+  const cats = ['Head Boy', 'Head Girl', 'Vice Head Boy', 'Vice Head Girl'];
+  let html = '<div class="stats-grid">';
+  cats.forEach(cat => {
+    const w = winners[cat];
+    html += `<div class="stat-box">
+      <div style="font-size:1.4rem;margin-bottom:4px">👑</div>
+      <div style="font-size:0.82rem;font-weight:700;color:var(--text)">${w ? escapeHTML(w.name) : '—'}</div>
+      <div style="font-size:0.68rem;color:var(--text-muted);margin-top:2px">${escapeHTML(cat)}</div>
+      ${w ? `<div style="font-size:0.72rem;color:var(--primary);font-weight:700;margin-top:2px">${w.votes} votes</div>` : ''}
+    </div>`;
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function renderClassVotes(classCounts) {
+  const tbody = document.getElementById('class-votes-tbody');
+  if (!classCounts || !Object.keys(classCounts).length) {
+    tbody.innerHTML = '<tr><td colspan="2" class="no-data">No votes yet</td></tr>';
+    return;
+  }
+  const sorted = Object.entries(classCounts).sort((a, b) => b[1] - a[1]);
+  tbody.innerHTML = sorted.map(([cls, count]) =>
+    `<tr><td>${escapeHTML(cls)}</td><td style="font-weight:700;color:var(--primary)">${count}</td></tr>`
+  ).join('');
+}
+
+// ============================================================
+//  CANDIDATES
+// ============================================================
+let allCandidates = [];
+
+async function loadCandidates() {
+  try {
+    const res = await apiFetch('getCandidates', { includeInactive: true });
+    if (res && res.candidates) {
+      allCandidates = res.candidates;
+      renderCandidateTable(res.candidates);
+    }
+  } catch(e) { showToast('Failed to load candidates', 'error'); }
+}
+
+function renderCandidateTable(candidates) {
+  const tbody = document.getElementById('cand-tbody');
+  if (!candidates.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="no-data">No candidates added yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = candidates.map(c => {
+    const initials = c.Name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+    const photo = c.Image_URL
+      ? `<img class="avatar-sm" src="${escapeAttr(c.Image_URL)}" onerror="this.outerHTML='<span class=\\'avatar-placeholder-sm\\'>${initials}</span>'">`
+      : `<span class="avatar-placeholder-sm">${initials}</span>`;
+    const isActive = c.Status === 'Active';
+    return `<tr>
+      <td>${photo}</td>
+      <td><strong>${escapeHTML(c.Name)}</strong><br><span style="font-size:0.7rem;color:var(--text-muted)">${escapeHTML(c.Tagline || '')}</span></td>
+      <td>${escapeHTML(c.Category)}</td>
+      <td>Class ${escapeHTML(c.Class)} · ${escapeHTML(c.Stream || '')}</td>
+      <td><span class="status-tag ${isActive ? 'active' : 'inactive'}">${c.Status}</span></td>
+      <td>
+        <button class="action-btn edit" onclick="editCandidate('${escapeAttr(c.Candidate_ID)}')">Edit</button>
+        <button class="action-btn ${isActive ? 'toggle-inactive' : 'toggle-active'}" onclick="toggleCandidate('${escapeAttr(c.Candidate_ID)}','${isActive ? 'Inactive' : 'Active'}')">${isActive ? 'Deactivate' : 'Activate'}</button>
+        <button class="action-btn delete" onclick="deleteCandidate('${escapeAttr(c.Candidate_ID)}', '${escapeAttr(c.Name)}')">Delete</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function saveCandidate() {
+  const id = document.getElementById('edit-id').value;
+  const payload = {
+    name: document.getElementById('f-name').value.trim(),
+    category: document.getElementById('f-category').value,
+    class: document.getElementById('f-class').value.trim(),
+    stream: document.getElementById('f-stream').value.trim(),
+    imageUrl: document.getElementById('f-image').value.trim(),
+    tagline: document.getElementById('f-tagline').value.trim(),
+  };
+  if (!payload.name || !payload.category || !payload.class) {
+    showToast('Name, Category, and Class are required', 'warning'); return;
+  }
+  try {
+    const action = id ? 'editCandidate' : 'addCandidate';
+    if (id) payload.candidateId = id;
+    const res = await apiFetch(action, payload);
+    if (res && res.success) {
+      showToast(id ? 'Candidate updated!' : 'Candidate added!', 'success');
+      clearForm();
+      loadCandidates();
+    } else {
+      showToast(res && res.error ? res.error : 'Save failed', 'error');
+    }
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+function editCandidate(id) {
+  const c = allCandidates.find(x => x.Candidate_ID === id);
+  if (!c) return;
+  document.getElementById('edit-id').value = id;
+  document.getElementById('f-name').value = c.Name || '';
+  document.getElementById('f-category').value = c.Category || '';
+  document.getElementById('f-class').value = c.Class || '';
+  document.getElementById('f-stream').value = c.Stream || '';
+  document.getElementById('f-image').value = c.Image_URL || '';
+  document.getElementById('f-tagline').value = c.Tagline || '';
+  document.getElementById('form-title-text').textContent = 'Edit Candidate';
+  document.getElementById('cancel-edit-btn').style.display = 'inline-block';
+  // Switch to candidates tab and scroll to form
+  switchTabDirect('candidates');
+  document.getElementById('f-name').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function cancelEdit() { clearForm(); }
+function clearForm() {
+  document.getElementById('edit-id').value = '';
+  ['f-name','f-category','f-class','f-stream','f-image','f-tagline'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('form-title-text').textContent = 'Add Candidate';
+  document.getElementById('cancel-edit-btn').style.display = 'none';
+}
+
+async function toggleCandidate(id, newStatus) {
+  try {
+    const res = await apiFetch('toggleCandidate', { candidateId: id, status: newStatus });
+    if (res && res.success) { showToast('Status updated', 'success'); loadCandidates(); }
+    else showToast('Failed to update status', 'error');
+  } catch(e) { showToast('Error', 'error'); }
+}
+
+function deleteCandidate(id, name) {
+  showModal('Delete Candidate', `Are you sure you want to delete "${name}"? This cannot be undone.`, async () => {
+    try {
+      const res = await apiFetch('deleteCandidate', { candidateId: id });
+      if (res && res.success) { showToast('Candidate deleted', 'success'); loadCandidates(); }
+      else showToast('Delete failed', 'error');
+    } catch(e) { showToast('Error', 'error'); }
+  });
+}
+
+// ============================================================
+//  MODAL
+// ============================================================
+let modalCallback = null;
+function showModal(title, body, onConfirm) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').textContent = body;
+  modalCallback = onConfirm;
+  document.getElementById('confirm-modal').classList.add('active');
+  document.getElementById('modal-confirm-btn').onclick = () => { closeModal(); if (modalCallback) modalCallback(); };
+}
+function closeModal() { document.getElementById('confirm-modal').classList.remove('active'); }
+
+// ============================================================
+//  API — GET with Admin Token (Secure for GAS)
+// ============================================================
+async function apiFetch(action, params) {
+  const url = new URL(SCRIPT_URL);
+  const payload = { action: action, adminPassword: adminToken, ...params };
+  url.searchParams.set('payload', JSON.stringify(payload));
+  
+  const res = await fetch(url.toString(), {
+    method: 'GET',
+    redirect: 'follow'
+  });
+  const text = await res.text();
+  try { return JSON.parse(text); }
+  catch(e) { throw new Error('Invalid response: ' + text.slice(0, 100)); }
+}
+
+// ============================================================
+//  HELPERS
+// ============================================================
+function switchTabDirect(tab) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t => {
+    if (t.textContent.trim().toLowerCase().startsWith(tab.substring(0, 5))) t.classList.add('active');
+  });
+}
+function showToast(msg, type = '') {
+  const t = document.getElementById('a-toast');
+  t.textContent = msg; t.className = 'toast show ' + type;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.className = 'toast', 3000);
+}
+function escapeHTML(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escapeAttr(s) { return escapeHTML(s); }
+</script>
+</body>
+</html>
